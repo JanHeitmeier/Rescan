@@ -18,6 +18,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,10 @@ import androidx.navigation.compose.rememberNavController
 import de.rescan.scan.ItemSelectScreen
 import de.rescan.scan.ScanScreen
 import de.rescan.ui.theme.GreenDark
+import de.rescan.ui.theme.GreenLight
 import de.rescan.ui.theme.RescanTheme
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +57,8 @@ class MainActivity : ComponentActivity() {
                         composable("greeting") { GreetingScreen(modifier = Modifier.padding(innerPadding)) }
                         composable("scan") { ScanScreen(navController) }
                         composable("itemSelect/{imageUri}") { backStackEntry ->
-                            val imageUri = backStackEntry.arguments?.getString("imageUri")
+                            val encodedUri = backStackEntry.arguments?.getString("imageUri")
+                            val imageUri = encodedUri?.let { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }
                             imageUri?.let { ItemSelectScreen(it) }
                         }
                     }
@@ -78,7 +83,10 @@ fun TopNavigationBar(navController: NavHostController) {
                 }
             }
         },
-        modifier = Modifier.shadow(4.dp)
+        modifier = Modifier.shadow(4.dp),
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = GreenLight
+        )
     )
 }
 

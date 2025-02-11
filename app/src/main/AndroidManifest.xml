@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
@@ -12,6 +11,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Rescan"
         tools:targetApi="31">
+        <meta-data
+            android:name="androidx.camera.core.CameraXConfig.Provider"
+            android:value="androidx.camera.camera2.Camera2Config$Provider" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -23,15 +25,18 @@
             </intent-filter>
         </activity>
 
-    <provider
-        android:name="androidx.core.content.FileProvider"
-        android:authorities="de.rescan.fileprovider"
-        android:exported="false"
-        android:grantUriPermissions="true">
-        <meta-data
-            android:name="android.support.FILE_PROVIDER_PATHS"
-            android:resource="@xml/file_paths" />
-    </provider>
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="de.rescan.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
+    <!-- Add the camera permission and feature -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-permission android:name="android.permission.CAMERA" />
 </manifest>

@@ -10,22 +10,46 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import de.rescan.ui.theme.GreenDark
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ItemSelectScreen(imageUri: String, modifier: Modifier = Modifier) {
     var lines by remember { mutableStateOf(listOf<String>()) }
+    var isLoading by remember { mutableStateOf(true) }
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(imageUri) {
-        val scanAdapter = ScanAdapter(context)
-        scanAdapter.processImage(Uri.parse(imageUri)) { text ->
-            lines = text.split("\n")
+        coroutineScope.launch {
+            withContext(Dispatchers.IO) {
+                val scanAdapter = ScanAdapter(context)
+                scanAdapter.processImage(Uri.parse(imageUri)) { text ->
+                    lines = text.textBlocks.flatMap { it.lines }.map { it.text }
+                }
+            }
+            isLoading = false
         }
     }
 
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = GreenDark, modifier = Modifier.wrapContentSize())
+        }
+    } else {
+        DisplayExtractedText(lines, modifier)
+    }
+}
+
+@Composable
+fun DisplayExtractedText(lines: List<String>, modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier.fillMaxSize().padding(16.dp)) {
         items(lines) { line ->
             LineItem(line)
