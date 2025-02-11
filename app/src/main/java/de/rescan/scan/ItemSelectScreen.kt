@@ -1,4 +1,4 @@
-package de.rescan.ui
+package de.rescan.scan
 
 import android.net.Uri
 import androidx.compose.foundation.layout.*
@@ -13,16 +13,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import de.rescan.ScanAdapter
 
 @Composable
-fun ItemSelectScreen(imageUri: Uri, modifier: Modifier = Modifier) {
+fun ItemSelectScreen(imageUri: String, modifier: Modifier = Modifier) {
     var lines by remember { mutableStateOf(listOf<String>()) }
     val context = LocalContext.current
 
     LaunchedEffect(imageUri) {
         val scanAdapter = ScanAdapter(context)
-        scanAdapter.processImage(imageUri) { text ->
+        scanAdapter.processImage(Uri.parse(imageUri)) { text ->
             lines = text.split("\n")
         }
     }
@@ -53,12 +52,7 @@ fun LineItem(text: String) {
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-//                DropdownMenuItem(onClick = { /* Handle tag selection */ }) {
-//                    Text("Tag 1")
-//                }
-//                DropdownMenuItem(onClick = { /* Handle tag selection */ }) {
-//                    Text("Tag 2")
-//                }
+                // Add DropdownMenuItems here
             }
         }
         IconButton(onClick = { /* Handle delete */ }) {

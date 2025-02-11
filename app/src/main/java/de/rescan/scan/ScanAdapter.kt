@@ -1,4 +1,4 @@
-package de.rescan
+package de.rescan.scan
 
 import android.content.Context
 import android.net.Uri
