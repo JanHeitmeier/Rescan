@@ -54,8 +54,6 @@ fun ItemSelectScreen(encodedUri: String) {
     val decodedUri = Uri.parse(URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString()))
     val scanAdapter = remember { ScanAdapter(context) }
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    val dismissedProducts = remember { mutableStateListOf<SavedProduct>() }
-    val savedProducts = remember { mutableStateListOf<SavedProduct>() }
     var handelText by remember { mutableStateOf("") }
     var einkaufsdatumText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
@@ -109,13 +107,9 @@ fun ItemSelectScreen(encodedUri: String) {
                     datum = einkaufsdatumText,
                     onDismissed = { savedProduct ->
                         products = products.toMutableList().apply { remove(product) }
-                        dismissedProducts.add(savedProduct)
-                        // Optionally, you could call mockDb.removeProduct(savedProduct) here if needed.
                     },
                     onSaved = { savedProduct ->
                         products = products.toMutableList().apply { remove(product) }
-                        savedProducts.add(savedProduct)
-                        // Save the product using the MockDb.
                         mockDb.addProduct(savedProduct)
                     }
                 )
