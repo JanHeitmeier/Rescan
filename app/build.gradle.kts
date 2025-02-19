@@ -52,7 +52,7 @@ android {
 dependencies {
 
     implementation("com.google.mlkit:text-recognition:16.0.0")
-
+    implementation("androidx.compose.material:material-icons-core")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -60,7 +60,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
+    implementation("androidx.compose.material:material:1.7.8")
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.lifecycle)

@@ -6,9 +6,9 @@ import android.net.Uri
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.util.UUID
 
 data class Element(val text: String, val boundingBox: android.graphics.Rect?)
-
 
 class ScanAdapter(private val context: Context) {
     fun processImage(imageUri: Uri, callback: (List<Product>) -> Unit) {
@@ -55,7 +55,7 @@ class ScanAdapter(private val context: Context) {
             if (matchResult != null) {
                 val price = matchResult.groupValues[1]
                 val productname = line.removeSuffix(matchResult.value).trim()
-                productList.add(Product(productname, price))
+                productList.add(Product(UUID.randomUUID().toString(),productname, price))
             }
         }
 
