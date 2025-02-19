@@ -22,17 +22,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.shadow
 import de.rescan.scan.MockDb
 import de.rescan.scan.ScanAdapter
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-
 
 // Base product data class coming from your scan adapter
 data class Product(val id: String, val productname: String, val price: String)
@@ -46,10 +46,10 @@ data class SavedProduct(
     val category: String
 )
 
-
 @Composable
 fun ItemSelectScreen(encodedUri: String) {
-    val mockDb = MockDb()
+    // Create a single instance of MockDb for saving products
+    val mockDb = MockDb.getInstance()
     val context = LocalContext.current
     val decodedUri = Uri.parse(URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString()))
     val scanAdapter = remember { ScanAdapter(context) }
@@ -59,7 +59,6 @@ fun ItemSelectScreen(encodedUri: String) {
     var handelText by remember { mutableStateOf("") }
     var einkaufsdatumText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
-
 
     LaunchedEffect(decodedUri) {
         coroutineScope.launch {
@@ -84,18 +83,22 @@ fun ItemSelectScreen(encodedUri: String) {
                     .padding(8.dp)
                     .weight(1f)
             )
-            // Header field for "Einkaufsdatum"
+            // Header field for "Einkaufsdatum" with basic input validation.
             OutlinedTextField(
                 value = einkaufsdatumText,
-                onValueChange = { einkaufsdatumText = it },
-                label = { Text("Einkaufsdatum") },
+                onValueChange = { newValue ->
+                    // Allow only up to 10 characters and only digits and dots.
+                    if (newValue.length <= 10 && newValue.all { it.isDigit() || it == '.' }) {
+                        einkaufsdatumText = newValue
+                    }
+                },
+                label = { Text("Einkaufsdatum (dd.mm.yyyy)") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
                     .weight(1f)
             )
         }
-        // Header field for "Handel (z.B. Aldi)"
 
         // Scrollable list of products
         LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -107,18 +110,19 @@ fun ItemSelectScreen(encodedUri: String) {
                     onDismissed = { savedProduct ->
                         products = products.toMutableList().apply { remove(product) }
                         dismissedProducts.add(savedProduct)
+                        // Optionally, you could call mockDb.removeProduct(savedProduct) here if needed.
                     },
                     onSaved = { savedProduct ->
                         products = products.toMutableList().apply { remove(product) }
                         savedProducts.add(savedProduct)
+                        // Save the product using the MockDb.
+                        mockDb.addProduct(savedProduct)
                     }
                 )
             }
         }
     }
-
 }
-
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -133,15 +137,17 @@ fun ProductRow(
     var expanded by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Wähle Kategorie") }
 
-// Create the dismiss state for swipe-to-dismiss.
-// Swiping from start-to-end (left-to-right) will save the product,
-// while swiping from end-to-start (right-to-left) will dismiss it.
+    // Local state for editable product name and price.
+    var editedProductName by remember { mutableStateOf(product.productname) }
+    var editedProductPrice by remember { mutableStateOf(product.price) }
+
+    // Create the dismiss state for swipe-to-dismiss.
     val dismissState = rememberDismissState(
         confirmStateChange = { dismissValue ->
             val finalCategory = if (selectedCategory != "Select category") selectedCategory else ""
             val savedProduct = SavedProduct(
-                productname = product.productname,
-                price = product.price,
+                productname = editedProductName,
+                price = editedProductPrice,
                 datum = datum,
                 handel = handel,
                 category = finalCategory
@@ -150,19 +156,16 @@ fun ProductRow(
                 DismissValue.DismissedToEnd -> { // Left-to-right swipe: Save
                     onSaved(savedProduct)
                 }
-
                 DismissValue.DismissedToStart -> { // Right-to-left swipe: Dismiss
                     onDismissed(savedProduct)
                 }
-
                 else -> {}
             }
             true
         }
     )
 
-// Animate the background color based on the swipe target:
-// Default: surface color, Save: green, Dismiss: red.
+    // Animate the background color based on the swipe target.
     val targetColor = when (dismissState.targetValue) {
         DismissValue.Default -> MaterialTheme.colors.surface
         DismissValue.DismissedToEnd -> Color.Green
@@ -174,7 +177,7 @@ fun ProductRow(
         state = dismissState,
         directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
         background = {
-            // Background with icon and color animation
+            // Background with icon and color animation.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -191,25 +194,36 @@ fun ProductRow(
             }
         },
         dismissContent = {
-            // Content for each product row with dropdown for category selection
+            // Content for each product row with dropdown for category selection,
+            // now enhanced with a light shadow.
             Column(
                 modifier = Modifier
+                    .shadow(4.dp, shape = RoundedCornerShape(8.dp))
                     .fillMaxWidth()
                     .background(MaterialTheme.colors.surface)
                     .padding(12.dp)
                     .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
             ) {
-                Row (
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(6.dp)
-
-                ){
-                    Text(modifier = Modifier.weight(2f),text = product.productname, style = MaterialTheme.typography.h6)
-                    Text(modifier = Modifier.weight(1f),text = product.price, style = MaterialTheme.typography.h6)
+                ) {
+                    OutlinedTextField(
+                        value = editedProductName,
+                        onValueChange = { editedProductName = it },
+                        label = { Text("Produktname") },
+                        modifier = Modifier.weight(2f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedTextField(
+                        value = editedProductPrice,
+                        onValueChange = { editedProductPrice = it },
+                        label = { Text("Preis") },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-
-                // Dropdown for selecting a category
+                // Dropdown for selecting a category.
                 Box {
                     Text(
                         text = selectedCategory,
@@ -245,5 +259,4 @@ fun ProductRow(
             }
         }
     )
-
 }

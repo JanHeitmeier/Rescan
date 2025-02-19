@@ -2,7 +2,6 @@ package de.rescan.scan
 
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -31,6 +30,8 @@ fun ScanScreen(navController: NavHostController) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    //mockDb über Singelton geholt
+    val mockDb = MockDb.getInstance()
 
     // Camera launcher for capturing full resolution picture
     val cameraLauncher = rememberLauncherForActivityResult(
@@ -65,11 +66,15 @@ fun ScanScreen(navController: NavHostController) {
                         }
                     }
                 )
+                if (!mockDb.isEmpty()) {
+                    MockDbContent(mockDb)
+                }
             }
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
+
     }
 }
 
