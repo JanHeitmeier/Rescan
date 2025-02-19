@@ -1,5 +1,5 @@
 import android.net.Uri
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Card
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
 import androidx.compose.material.DropdownMenu
@@ -17,27 +19,30 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.rememberDismissState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.draw.shadow
 import de.rescan.scan.MockDb
+import de.rescan.scan.MockDbContent
 import de.rescan.scan.ScanAdapter
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import kotlin.math.abs
 
-// Base product data class coming from your scan adapter
+// Base product data class coming from your scan adapter.
 data class Product(val id: String, val productname: String, val price: String)
 
-// Data class for a product with additional info (for saved/dismissed products)
+// Data class for a product with additional info (for saved/dismissed products).
 data class SavedProduct(
     val productname: String,
     val price: String,
@@ -48,72 +53,108 @@ data class SavedProduct(
 
 @Composable
 fun ItemSelectScreen(encodedUri: String) {
-    // Create a single instance of MockDb for saving products
+    // Use a singleton instance of MockDb.
     val mockDb = MockDb.getInstance()
     val context = LocalContext.current
-    val decodedUri = Uri.parse(URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString()))
+    val decodedUri =
+        Uri.parse(URLDecoder.decode(encodedUri, StandardCharsets.UTF_8.toString()))
     val scanAdapter = remember { ScanAdapter(context) }
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
     var handelText by remember { mutableStateOf("") }
     var einkaufsdatumText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    var showDialog by remember { mutableStateOf(false) }
+    var scanDone by remember { mutableStateOf(false) }
+    // Persist category selection by product id.
+    val categoryMap = remember { mutableStateMapOf<String, String>() }
 
     LaunchedEffect(decodedUri) {
         coroutineScope.launch {
             scanAdapter.processImage(decodedUri) { scannedProducts ->
                 products = scannedProducts
+                scanDone = true
             }
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, Color.Black)
-        ) {
-            OutlinedTextField(
-                value = handelText,
-                onValueChange = { handelText = it },
-                label = { Text("Handel (z.B. Aldi)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .weight(1f)
-            )
-            // Header field for "Einkaufsdatum" with basic input validation.
-            OutlinedTextField(
-                value = einkaufsdatumText,
-                onValueChange = { newValue ->
-                    // Allow only up to 10 characters and only digits and dots.
-                    if (newValue.length <= 10 && newValue.all { it.isDigit() || it == '.' }) {
-                        einkaufsdatumText = newValue
-                    }
-                },
-                label = { Text("Einkaufsdatum (dd.mm.yyyy)") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .weight(1f)
-            )
+    // When the product list becomes empty (and scanning is done) show a popup.
+    LaunchedEffect(products) {
+        if (products.isEmpty() && scanDone) {
+            showDialog = true
         }
+    }
 
-        // Scrollable list of products
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(products, key = { it.id }) { product ->
-                ProductRow(
-                    product = product,
-                    handel = handelText,
-                    datum = einkaufsdatumText,
-                    onDismissed = { savedProduct ->
-                        products = products.toMutableList().apply { remove(product) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header row with Handel and Einkaufsdatum TextFields.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color.Black)
+            ) {
+                val textFieldHeight = 80.dp
+                OutlinedTextField(
+                    value = handelText,
+                    onValueChange = { handelText = it },
+                    label = { Text("Handel (z.B. Aldi)") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .height(textFieldHeight)
+                )
+                OutlinedTextField(
+                    value = einkaufsdatumText,
+                    onValueChange = { newValue ->
+                        // Allow only up to 10 characters and only digits and dots (or commas).
+                        if (newValue.length <= 10 && newValue.all { it.isDigit() || it == '.' || it == ',' }) {
+                            einkaufsdatumText = newValue
+                        }
                     },
-                    onSaved = { savedProduct ->
-                        products = products.toMutableList().apply { remove(product) }
-                        mockDb.addProduct(savedProduct)
-                    }
+                    label = { Text("Einkaufsdatum (dd.mm.yyyy)") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(8.dp)
+                        .height(textFieldHeight)
                 )
             }
+
+            // List of products.
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(products, key = { it.id }) { product ->
+                    ProductRow(
+                        product = product,
+                        handel = handelText,
+                        datum = einkaufsdatumText,
+                        // Pass the saved category from the map (or default).
+                        selectedCategory = categoryMap[product.id] ?: "Wähle Kategorie",
+                        onCategoryChange = { newCategory ->
+                            categoryMap[product.id] = newCategory
+                        },
+                        onDismissed = { savedProduct ->
+                            products = products.toMutableList().apply { remove(product) }
+                        },
+                        onSaved = { savedProduct ->
+                            products = products.toMutableList().apply { remove(product) }
+                            mockDb.addProduct(savedProduct)
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+
+        // Popup notification when all products are processed.
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { /* Prevent dismissing by tapping outside */ },
+                title = { Text("Alle Produkte verarbeitet") },
+                text = { MockDbContent(mockDb = mockDb) },
+                confirmButton = {
+                    TextButton(onClick = { showDialog = false }) {
+                        Text("OK")
+                    }
+                }
+            )
         }
     }
 }
@@ -124,128 +165,122 @@ fun ProductRow(
     product: Product,
     handel: String,
     datum: String,
+    selectedCategory: String,
+    onCategoryChange: (String) -> Unit,
     onDismissed: (SavedProduct) -> Unit,
     onSaved: (SavedProduct) -> Unit
 ) {
-    // Local state to manage the dropdown for category selection
-    var expanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf("Wähle Kategorie") }
+    // Ensure the latest header values are used.
+    val currentHandel by rememberUpdatedState(newValue = handel)
+    val currentDatum by rememberUpdatedState(newValue = datum)
 
     // Local state for editable product name and price.
     var editedProductName by remember { mutableStateOf(product.productname) }
     var editedProductPrice by remember { mutableStateOf(product.price) }
 
-    // Create the dismiss state for swipe-to-dismiss.
+    // State to control the dropdown menu.
+    var expanded by remember { mutableStateOf(false) }
+
+    // Create the dismiss state.
     val dismissState = rememberDismissState(
         confirmStateChange = { dismissValue ->
-            val finalCategory = if (selectedCategory != "Select category") selectedCategory else ""
+            // Require that Handel is not empty when saving.
+            if (dismissValue == DismissValue.DismissedToEnd && currentHandel.trim().isEmpty()) {
+                return@rememberDismissState false
+            }
+            // Build the saved product using the latest header values.
             val savedProduct = SavedProduct(
                 productname = editedProductName,
                 price = editedProductPrice,
-                datum = datum,
-                handel = handel,
-                category = finalCategory
+                datum = currentDatum,
+                handel = currentHandel,
+                category = if (selectedCategory != "Wähle Kategorie") selectedCategory else ""
             )
             when (dismissValue) {
-                DismissValue.DismissedToEnd -> { // Left-to-right swipe: Save
-                    onSaved(savedProduct)
-                }
-                DismissValue.DismissedToStart -> { // Right-to-left swipe: Dismiss
-                    onDismissed(savedProduct)
-                }
+                DismissValue.DismissedToEnd -> onSaved(savedProduct)
+                DismissValue.DismissedToStart -> onDismissed(savedProduct)
                 else -> {}
             }
             true
         }
     )
 
-    // Animate the background color based on the swipe target.
-    val targetColor = when (dismissState.targetValue) {
-        DismissValue.Default -> MaterialTheme.colors.surface
-        DismissValue.DismissedToEnd -> Color.Green
-        DismissValue.DismissedToStart -> Color.Red
-    }
-    val backgroundColor by animateColorAsState(targetValue = targetColor)
-
+    // Use a basic swipe background: green for save and red for dismiss.
     SwipeToDismiss(
         state = dismissState,
         directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
         background = {
-            // Background with icon and color animation.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(backgroundColor)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = if (dismissState.dismissDirection == DismissDirection.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd
-            ) {
-                val icon = if (dismissState.dismissDirection == DismissDirection.StartToEnd) {
-                    Icons.Default.CheckCircle
-                } else {
-                    Icons.Default.Delete
-                }
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+            val bgColor = when (dismissState.dismissDirection) {
+                DismissDirection.StartToEnd -> Color.Green
+                DismissDirection.EndToStart -> Color.Red
+                else -> Color.Transparent
             }
+            Box(modifier = Modifier.fillMaxSize().background(bgColor))
         },
         dismissContent = {
-            // Content for each product row with dropdown for category selection,
-            // now enhanced with a light shadow.
-            Column(
+            Card(
                 modifier = Modifier
-                    .shadow(4.dp, shape = RoundedCornerShape(8.dp))
                     .fillMaxWidth()
-                    .background(MaterialTheme.colors.surface)
-                    .padding(12.dp)
-                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                    .padding(top = 2.dp, bottom = 6.dp, start = 2.dp, end = 6.dp),
+                elevation = 3.dp,
+                shape = RoundedCornerShape(4.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(6.dp)
+                        .padding(vertical = 8.dp, horizontal = 12.dp)
                 ) {
-                    OutlinedTextField(
-                        value = editedProductName,
-                        onValueChange = { editedProductName = it },
-                        label = { Text("Produktname") },
-                        modifier = Modifier.weight(2f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = editedProductPrice,
-                        onValueChange = { editedProductPrice = it },
-                        label = { Text("Preis") },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // Dropdown for selecting a category.
-                Box {
-                    Text(
-                        text = selectedCategory,
-                        style = MaterialTheme.typography.body1,
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = editedProductName,
+                            onValueChange = { editedProductName = it },
+                            label = { Text("Produktname") },
+                            modifier = Modifier.weight(2f)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = editedProductPrice,
+                            onValueChange = { editedProductPrice = it },
+                            label = { Text("Preis") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Category dropdown with description and arrow.
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { expanded = true }
-                            .padding(vertical = 12.dp)
-                    )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val categoryText = if (selectedCategory == "Wähle Kategorie") {
+                            "Kategorie: Wähle hier!"
+                        } else {
+                            "Kategorie: $selectedCategory"
+                        }
+                        Text(text = categoryText, modifier = Modifier.weight(1f))
+                        if (selectedCategory == "Wähle Kategorie") {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Dropdown Arrow"
+                            )
+                        }
+                    }
                     DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(onClick = {
-                            selectedCategory = "Haushalt"; expanded = false
-                        }) {
+                        DropdownMenuItem(onClick = { onCategoryChange("Haushalt"); expanded = false }) {
                             Text("Haushalt")
                         }
-                        DropdownMenuItem(onClick = {
-                            selectedCategory = "Essen"; expanded = false
-                        }) {
+                        DropdownMenuItem(onClick = { onCategoryChange("Essen"); expanded = false }) {
                             Text("Essen")
                         }
-                        DropdownMenuItem(onClick = {
-                            selectedCategory = "Freizeit"; expanded = false
-                        }) {
+                        DropdownMenuItem(onClick = { onCategoryChange("Freizeit"); expanded = false }) {
                             Text("Freizeit")
                         }
-                        DropdownMenuItem(onClick = {
-                            selectedCategory = "Arbeit"; expanded = false
-                        }) {
+                        DropdownMenuItem(onClick = { onCategoryChange("Arbeit"); expanded = false }) {
                             Text("Arbeit")
                         }
                     }

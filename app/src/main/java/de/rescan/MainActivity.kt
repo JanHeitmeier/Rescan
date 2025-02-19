@@ -40,6 +40,9 @@ import de.rescan.ui.theme.RescanTheme
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
+
+//To-Do gesamt anzeige der mock DB hier einmal ausgeben in lazy coloum
+//To-Do "Rescan in Topnavbar reinschreiben"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,6 +117,8 @@ fun TopNavigationBar(navController: NavHostController) {
                     Icon(Icons.Default.Menu, contentDescription = "Home")
                 }
                 Spacer(modifier = Modifier.weight(1f))
+                Text(text = "Rescan")
+                Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = { navController.navigate("scan") }) {
                     Icon(Icons.Default.Add, contentDescription = "Scan")
                 }
@@ -127,7 +132,7 @@ fun TopNavigationBar(navController: NavHostController) {
 @Composable
 fun GreetingScreen(modifier: Modifier = Modifier) {
     Text(
-        text = "Welcome to \n  Rescan",
+        text = "Welcome to\nRescan",
         color = GreenDark,
         fontSize = 40.sp,
         fontStyle = FontStyle.Italic,
