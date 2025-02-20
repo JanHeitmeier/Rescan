@@ -13,7 +13,7 @@ private val DarkColorPalette = darkColors(
 )
 
 private val LightColorPalette = lightColors(
-    primary = GreenLight,
+    primary = GreenDark,
     secondary = Turquoise,
     surface = Beige,
     background = androidx.compose.ui.graphics.Color.White,

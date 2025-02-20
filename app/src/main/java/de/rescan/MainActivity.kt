@@ -40,7 +40,7 @@ import java.nio.charset.StandardCharsets
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-    var mockDb = MockDb.getInstance()
+        var mockDb = MockDb.getInstance()
         setContent {
             RescanTheme {
                 RequestPermissions()

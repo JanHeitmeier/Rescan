@@ -162,6 +162,7 @@ fun ProductRow(
 ) {
     val currentHandel by rememberUpdatedState(newValue = handel)
     val currentDatum by rememberUpdatedState(newValue = datum)
+    val selectedCategory by rememberUpdatedState(newValue = selectedCategory)
     var editedProductName by remember { mutableStateOf(product.productname) }
     var editedProductPrice by remember { mutableStateOf(product.price) }
     var expanded by remember { mutableStateOf(false) }
