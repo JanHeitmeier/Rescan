@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
@@ -23,33 +22,27 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import de.rescan.scan.MockDb
+import de.rescan.scan.MockDbContent
 import de.rescan.scan.ScanScreen
 import de.rescan.ui.theme.GreenDark
 import de.rescan.ui.theme.RescanTheme
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
-
-//To-Do gesamt anzeige der mock DB hier einmal ausgeben in lazy coloum
-//To-Do "Rescan in Topnavbar reinschreiben"
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+    var mockDb = MockDb.getInstance()
         setContent {
             RescanTheme {
-                // Request the necessary permissions
                 RequestPermissions()
 
                 val navController = rememberNavController()
@@ -63,7 +56,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("greeting") {
-                            GreetingScreen(modifier = Modifier.padding(innerPadding))
+                            MockDbContent(mockDb)
                         }
                         composable("scan") {
                             ScanScreen(navController)
@@ -84,16 +77,11 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun RequestPermissions() {
-    // Create a launcher to request multiple permissions
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
-            // The result is a map of permissions to whether they were granted.
-            // No further handling is done here per your instructions.
         }
     )
-
-    // Launch the permission request when this composable is first composed.
     LaunchedEffect(Unit) {
         permissionLauncher.launch(
             arrayOf(
@@ -105,8 +93,6 @@ fun RequestPermissions() {
         )
     }
 }
-
-
 
 @Composable
 fun TopNavigationBar(navController: NavHostController) {
@@ -129,17 +115,4 @@ fun TopNavigationBar(navController: NavHostController) {
     )
 }
 
-@Composable
-fun GreetingScreen(modifier: Modifier = Modifier) {
-    Text(
-        text = "Welcome to\nRescan",
-        color = GreenDark,
-        fontSize = 40.sp,
-        fontStyle = FontStyle.Italic,
-        fontWeight = FontWeight.Bold,
-        lineHeight = 50.sp,
-        modifier = modifier
-            .fillMaxSize()
-            .wrapContentSize(Alignment.Center)
-    )
-}
+

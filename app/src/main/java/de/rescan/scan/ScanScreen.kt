@@ -9,8 +9,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -19,10 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import de.rescan.ui.theme.Beige
-import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -34,11 +29,7 @@ fun ScanScreen(navController: NavHostController) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var cameraError by remember { mutableStateOf(false) }
 
-    //mockDb über Singelton geholt
-    val mockDb = MockDb.getInstance()
 
-
-    // Camera launcher for capturing full resolution picture
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -50,9 +41,9 @@ fun ScanScreen(navController: NavHostController) {
         }
     }
     LaunchedEffect(Unit) {
-        imageUri = createImageUri(context) // Create a file for the image
+        imageUri = createImageUri(context)
         imageUri?.let { uri ->
-            cameraLauncher.launch(uri) // Open camera with full resolution
+            cameraLauncher.launch(uri)
         } ?: run {
             cameraError = true
         }

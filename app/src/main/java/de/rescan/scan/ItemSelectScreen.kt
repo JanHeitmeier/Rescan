@@ -1,5 +1,5 @@
 import android.net.Uri
-import androidx.compose.animation.core.animateDpAsState
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,7 +15,6 @@ import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.Text
@@ -26,10 +25,8 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import de.rescan.scan.MockDb
 import de.rescan.scan.MockDbContent
@@ -37,12 +34,9 @@ import de.rescan.scan.ScanAdapter
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import kotlin.math.abs
 
-// Base product data class coming from your scan adapter.
 data class Product(val id: String, val productname: String, val price: String)
 
-// Data class for a product with additional info (for saved/dismissed products).
 data class SavedProduct(
     val productname: String,
     val price: String,
@@ -53,7 +47,6 @@ data class SavedProduct(
 
 @Composable
 fun ItemSelectScreen(encodedUri: String) {
-    // Use a singleton instance of MockDb.
     val mockDb = MockDb.getInstance()
     val context = LocalContext.current
     val decodedUri =
@@ -77,7 +70,7 @@ fun ItemSelectScreen(encodedUri: String) {
         }
     }
 
-    // When the product list becomes empty (and scanning is done) show a popup.
+
     LaunchedEffect(products) {
         if (products.isEmpty() && scanDone) {
             showDialog = true
@@ -86,7 +79,6 @@ fun ItemSelectScreen(encodedUri: String) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header row with Handel and Einkaufsdatum TextFields.
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -105,7 +97,6 @@ fun ItemSelectScreen(encodedUri: String) {
                 OutlinedTextField(
                     value = einkaufsdatumText,
                     onValueChange = { newValue ->
-                        // Allow only up to 10 characters and only digits and dots (or commas).
                         if (newValue.length <= 10 && newValue.all { it.isDigit() || it == '.' || it == ',' }) {
                             einkaufsdatumText = newValue
                         }
@@ -118,14 +109,13 @@ fun ItemSelectScreen(encodedUri: String) {
                 )
             }
 
-            // List of products.
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(products, key = { it.id }) { product ->
                     ProductRow(
                         product = product,
                         handel = handelText,
                         datum = einkaufsdatumText,
-                        // Pass the saved category from the map (or default).
+
                         selectedCategory = categoryMap[product.id] ?: "Wähle Kategorie",
                         onCategoryChange = { newCategory ->
                             categoryMap[product.id] = newCategory
@@ -143,10 +133,10 @@ fun ItemSelectScreen(encodedUri: String) {
             }
         }
 
-        // Popup notification when all products are processed.
+
         if (showDialog) {
             AlertDialog(
-                onDismissRequest = { /* Prevent dismissing by tapping outside */ },
+                onDismissRequest = { },
                 title = { Text("Alle Produkte verarbeitet") },
                 text = { MockDbContent(mockDb = mockDb) },
                 confirmButton = {
@@ -170,25 +160,18 @@ fun ProductRow(
     onDismissed: (SavedProduct) -> Unit,
     onSaved: (SavedProduct) -> Unit
 ) {
-    // Ensure the latest header values are used.
     val currentHandel by rememberUpdatedState(newValue = handel)
     val currentDatum by rememberUpdatedState(newValue = datum)
-
-    // Local state for editable product name and price.
     var editedProductName by remember { mutableStateOf(product.productname) }
     var editedProductPrice by remember { mutableStateOf(product.price) }
-
-    // State to control the dropdown menu.
     var expanded by remember { mutableStateOf(false) }
 
-    // Create the dismiss state.
+
     val dismissState = rememberDismissState(
         confirmStateChange = { dismissValue ->
-            // Require that Handel is not empty when saving.
             if (dismissValue == DismissValue.DismissedToEnd && currentHandel.trim().isEmpty()) {
                 return@rememberDismissState false
             }
-            // Build the saved product using the latest header values.
             val savedProduct = SavedProduct(
                 productname = editedProductName,
                 price = editedProductPrice,
@@ -205,7 +188,6 @@ fun ProductRow(
         }
     )
 
-    // Use a basic swipe background: green for save and red for dismiss.
     SwipeToDismiss(
         state = dismissState,
         directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
@@ -249,7 +231,6 @@ fun ProductRow(
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Category dropdown with description and arrow.
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

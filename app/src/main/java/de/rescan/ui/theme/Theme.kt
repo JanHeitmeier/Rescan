@@ -3,9 +3,6 @@ package de.rescan.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.material.*
-import androidx.compose.material.MaterialTheme.colors
-
-// Create dark and light color palettes using legacy Material APIs.
 
 private val DarkColorPalette = darkColors(
     primary = GreenDark,
@@ -23,14 +20,14 @@ private val LightColorPalette = lightColors(
     onPrimary = androidx.compose.ui.graphics.Color.Black
 )
 
-// Define default typography and shapes (using legacy Material defaults).
 private val Shapes = Shapes()
 
 @Composable
 fun RescanTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
-) { // Dynamic color support is removed because only legacy Material functions are allowed. val colors = if (darkTheme) DarkColorPalette else LightColorPalette
+) {
+    val colors = if (darkTheme) DarkColorPalette else LightColorPalette
 
     MaterialTheme(
         colors = colors,
