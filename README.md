@@ -1,5 +1,89 @@
 # Rescan
 
+An overview of the workflow from image capture to product management.
+
+> Camera capture → Image processing → Product display & editing → Persistence
+
+## Project description
+
+Rescan is an Android app that extracts product information from camera images, presents it for editing, and manages it locally.  
+The focus is on an end-to-end, performant workflow from image capture through text recognition to product storage.
+
+## Key features
+
+- Offline text recognition with ML Kit for robust extraction of text from receipts
+- Modern, declarative UI built with Jetpack Compose
+- Product list with inline editing directly in the list view
+- Swipe gestures for quickly saving or discarding individual products
+- Simulated local database (MockDb) providing CRUD operations for product data
+
+## Architecture and components
+
+The app is structured into clearly separated components:
+
+- ScanScreen  
+  Starts the camera and initiates image capture.
+
+- ScanAdapter  
+  Processes the captured image, performs text recognition, and extracts product data.
+
+- ItemSelectScreen  
+  Displays the recognized products in a list and allows editing and categorization.
+
+- ProductRow  
+  Single product row with input fields and swipe gestures for actions (save/discard).
+
+- MockDb  
+  Simulated database providing CRUD operations for product objects.
+
+## UI and interaction
+
+### ItemSelectScreen with LazyColumn
+
+Recognized products are displayed in a LazyColumn:
+
+- Efficient rendering even for long lists
+- Each entry is based on a `Product` object
+- Uses `product.id` as the key to ensure stable and performant UI updates
+
+### SwipeToDismiss in ProductRow
+
+Each product row is wrapped with SwipeToDismiss:
+
+- Swipe to the right (DismissedToEnd): product is saved
+- Swipe to the left (DismissedToStart): product is discarded
+- `rememberDismissState` manages the swipe state
+- Logic in `confirmStateChange` validates conditions (e.g., required fields) and triggers the appropriate action
+- Visual feedback via colored backgrounds (e.g., green for save, red for discard)
+
+## Workflow
+
+1. The user opens the ScanScreen and captures an image.  
+2. The ScanAdapter processes the image, recognizes text, and extracts product objects.  
+3. The ItemSelectScreen displays all recognized products in a scrollable list.  
+4. The user can edit products directly in the list (e.g., name, store, category).  
+5. Using swipe gestures, products are either saved (in MockDb) or discarded.  
+6. The list updates immediately by removing the affected row.
+
+## Technologies
+
+- Kotlin
+- Jetpack Compose
+- ML Kit (offline text recognition)
+- CameraX (camera capture)
+- MockDb (local database simulation)
+
+## Installation and usage
+
+1. Clone the repository.  
+2. Open the project in Android Studio.  
+3. Configure an Android device or emulator with camera access.  
+4. Run the app and go through the scan workflow.
+
+---
+
+# Rescan (Deutsch)
+
 Ein Überblick über den Workflow von der Bildaufnahme bis zur Produktverwaltung.
 
 > Kameraaufnahme → Bildverarbeitung → Produktanzeige & Bearbeitung → Speicherung
@@ -75,8 +159,7 @@ Jede Produktzeile ist mit SwipeToDismiss umschlossen:
 
 ## Installation und Ausführung
 
-1. Repository klonen.
-2. Projekt in Android Studio öffnen.
-3. Ein Android-Gerät oder Emulator mit Kamerazugriff konfigurieren.
+1. Repository klonen.  
+2. Projekt in Android Studio öffnen.  
+3. Ein Android-Gerät oder Emulator mit Kamerazugriff konfigurieren.  
 4. App ausführen und den Scan-Workflow durchlaufen.
-
