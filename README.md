@@ -11,7 +11,7 @@ Der Fokus liegt auf einem durchgängigen, performanten Workflow von der Aufnahme
 
 ## Kernfeatures
 
-- Offline-Texterkennung mit ML Kit zur robusten Erkennung von Text auf Produktbildern
+- Offline-Texterkennung mit ML Kit zur robusten Erkennung von Text auf Quittungen (engl. receipt)
 - Moderne, deklarative UI mit Jetpack Compose
 - Produktliste mit Bearbeitung direkt in der Listenansicht
 - Swipe-Gesten zum schnellen Speichern oder Verwerfen einzelner Produkte
